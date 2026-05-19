@@ -14,7 +14,7 @@ public class PacManWorld extends World
         PacManWorld.hoehe = getHeight();
         //Greenfoot.playSound("PacmannMusikFürGreenFoot.mp3");
         
-        addObject(new Pacman(), getWidth(), getHeight());
+        addObject(new Pacman(), getWidth()/2, getHeight()/2);
         addObject(new settings(), getWidth() - (getWidth()/25), getHeight() - (getHeight()/25));
     }
 }
