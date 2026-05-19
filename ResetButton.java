@@ -4,7 +4,7 @@ public class ResetButton extends Actor
 {
     protected void addedToWorld(World w) {
         if (w instanceof SettingMenu) {
-            getImage().scale(SettingMenu.breite / 10, SettingMenu.hoehe / 10);
+            getImage().scale(SettingMenu.breite / 10, SettingMenu.hoehe / 15);
         }
     }
     public void act()
@@ -18,8 +18,8 @@ public class ResetButton extends Actor
     private void resetToDefault()
     {
         // 1. Standardwerte festlegen
-        int defaultWidth = 600;
-        int defaultHeight = 400;
+        int defaultWidth = 1200;
+        int defaultHeight = 800;
         int defaultVolume = 50;
 
         // 2. Speicher überschreiben

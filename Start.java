@@ -8,11 +8,11 @@ public class Start extends World
     public Start()
     {    
         // Temporäre Weltgröße beim Initialisieren
-        super(600, 400, 1); 
+        super(1200, 800, 1); 
         
         // Standardwerte festlegen (falls noch nichts gespeichert wurde)
-        int resX = 600;
-        int resY = 400;
+        int resX = 1200;
+        int resY = 800;
         int volume = 50;
 
         // Versuchen, gespeicherte Einstellungen zu laden
