@@ -1,19 +1,19 @@
-import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
+import greenfoot.*;
 
-/**
- * Write a description of class PacDots here.
- * 
- * @author (your name) 
- * @version (a version number or a date)
- */
 public class PacDots extends Actor
 {
-    PacDots()
+    private static final int POINT_VALUE = 10;
+
+    public PacDots()
     {
-        getImage().scale(PacManWorld.breite/60 , PacManWorld.hoehe/80 );
+        GreenfootImage image = new GreenfootImage(10, 10);
+        image.setColor(Color.WHITE);
+        image.fillOval(0, 0, 10, 10);
+        setImage(image);
     }
-    public void act()
+
+    public int getPointValue()
     {
-        // Add your action code here.
+        return POINT_VALUE;
     }
 }

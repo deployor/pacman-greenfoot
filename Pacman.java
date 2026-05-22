@@ -1,41 +1,130 @@
-import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
+import greenfoot.*;
 
-/**
- * Write a description of class Pacman here.
- * 
- * @author (your name) 
- * @version (a version number or a date)
- */
-public class Pacman extends Actor
+public class Pacman extends GridMover
 {
-    public static String PacManKey="L";
-    public static Boolean UpPosible;
-    public static Boolean DownPosible;
-    public static Boolean RightPosible;
-    public static Boolean LeftPosible;
-    
-    public Pacman()
+    private static final int SPEED = 4;
+
+    private final int startColumn;
+    private final int startRow;
+
+    private int wantedDirectionX;
+    private int wantedDirectionY;
+
+    public Pacman(int startColumn, int startRow)
     {
-        getImage().scale(PacManWorld.breite / 30, PacManWorld.hoehe / 20);    
+        super(startColumn, startRow, SPEED);
+        this.startColumn = startColumn;
+        this.startRow = startRow;
+        directionX = 1;
+        directionY = 0;
+        wantedDirectionX = 1;
+        wantedDirectionY = 0;
+        setPacmanImage("pacman-right.png");
     }
+
     public void act()
     {
-        if(Greenfoot.isKeyDown("Down") || Greenfoot.isKeyDown("s"))
-        {
-            PacManKey ="D";
+        PacManWorld world = (PacManWorld)getWorld();
+        if (!world.isGameRunning()) {
+            return;
         }
-        if(Greenfoot.isKeyDown("Up") || Greenfoot.isKeyDown("w"))
-        {
-            PacManKey ="U";
+
+        readKeys();
+        continueMoving();
+
+        if (!isMoving()) {
+            chooseNextMove();
         }
-        if(Greenfoot.isKeyDown("Right") || Greenfoot.isKeyDown("d"))
-        {
-            PacManKey ="R";
+
+        eatDots(world);
+        checkGhostTouch(world);
+    }
+
+    public int getDirectionX()
+    {
+        return directionX;
+    }
+
+    public int getDirectionY()
+    {
+        return directionY;
+    }
+
+    public void resetToStart()
+    {
+        resetGridPosition(startColumn, startRow);
+        directionX = 1;
+        directionY = 0;
+        wantedDirectionX = 1;
+        wantedDirectionY = 0;
+        setPacmanImage("pacman-right.png");
+    }
+
+    private void readKeys()
+    {
+        if (Greenfoot.isKeyDown("up") || Greenfoot.isKeyDown("w")) {
+            wantedDirectionX = 0;
+            wantedDirectionY = -1;
         }
-        if(Greenfoot.isKeyDown("Left") || Greenfoot.isKeyDown("a"))
-        {
-            PacManKey ="L";
+        else if (Greenfoot.isKeyDown("down") || Greenfoot.isKeyDown("s")) {
+            wantedDirectionX = 0;
+            wantedDirectionY = 1;
         }
-        System.out.println(getX() + " X, " + getY() + " Y");
+        else if (Greenfoot.isKeyDown("left") || Greenfoot.isKeyDown("a")) {
+            wantedDirectionX = -1;
+            wantedDirectionY = 0;
+        }
+        else if (Greenfoot.isKeyDown("right") || Greenfoot.isKeyDown("d")) {
+            wantedDirectionX = 1;
+            wantedDirectionY = 0;
+        }
+    }
+
+    private void chooseNextMove()
+    {
+        if (canStartMoving(wantedDirectionX, wantedDirectionY)) {
+            startMoving(wantedDirectionX, wantedDirectionY);
+            updateImageForDirection();
+        }
+        else if (canStartMoving(directionX, directionY)) {
+            startMoving(directionX, directionY);
+        }
+    }
+
+    private void eatDots(PacManWorld world)
+    {
+        PacDots dot = (PacDots)getOneIntersectingObject(PacDots.class);
+        if (dot != null) {
+            world.eatPellet(dot);
+        }
+    }
+
+    private void checkGhostTouch(PacManWorld world)
+    {
+        if (isTouching(Ghost.class)) {
+            world.pacmanWasCaught();
+        }
+    }
+
+    private void updateImageForDirection()
+    {
+        if (directionX < 0) {
+            setPacmanImage("pacman-left.png");
+        }
+        else if (directionX > 0) {
+            setPacmanImage("pacman-right.png");
+        }
+        else if (directionY < 0) {
+            setPacmanImage("pacman-up.png");
+        }
+        else if (directionY > 0) {
+            setPacmanImage("pacman-down.png");
+        }
+    }
+
+    private void setPacmanImage(String imageName)
+    {
+        setImage(imageName);
+        getImage().scale(PacManWorld.TILE_SIZE - 6, PacManWorld.TILE_SIZE - 6);
     }
 }
