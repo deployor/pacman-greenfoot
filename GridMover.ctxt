@@ -1,0 +1,19 @@
+#BlueJ class context
+comment0.target=GridMover
+comment1.params=startColumn\ startRow\ speed
+comment1.target=GridMover(int,\ int,\ int)
+comment2.params=world
+comment2.target=void\ addedToWorld(greenfoot.World)
+comment3.params=
+comment3.target=boolean\ isMoving()
+comment4.params=newColumn\ newRow
+comment4.target=void\ resetGridPosition(int,\ int)
+comment5.params=nextDirectionX\ nextDirectionY
+comment5.target=boolean\ canStartMoving(int,\ int)
+comment6.params=nextDirectionX\ nextDirectionY
+comment6.target=void\ startMoving(int,\ int)
+comment7.params=
+comment7.target=void\ continueMoving()
+comment8.params=value\ target
+comment8.target=int\ moveValueToward(int,\ int)
+numComments=9

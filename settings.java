@@ -8,13 +8,13 @@ public class settings extends Actor
 
         if (w instanceof PacManWorld)
         {
-            image.scale(PacManWorld.breite/15, PacManWorld.hoehe/10);
-            setLocation(PacManWorld.breite-PacManWorld.breite/30, PacManWorld.hoehe/20);
+            image.scale(PacManWorld.breite/18, PacManWorld.hoehe/12);
+            setLocation(PacManWorld.breite-PacManWorld.breite/32, PacManWorld.hoehe/24);
         }
         else if (w instanceof SettingMenu)
         {
-            image.scale(SettingMenu.breite/15, SettingMenu.hoehe/10);
-            setLocation(SettingMenu.breite-SettingMenu.breite/30, SettingMenu.hoehe/20);
+            image.scale(SettingMenu.breite/18, SettingMenu.hoehe/12);
+            setLocation(SettingMenu.breite-SettingMenu.breite/32, SettingMenu.hoehe/24);
         }
     }
 

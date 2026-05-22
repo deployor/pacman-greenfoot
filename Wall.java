@@ -1,19 +1,14 @@
-import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
+import greenfoot.*;
 
-/**
- * Write a description of class Wall here.
- * 
- * @author (your name) 
- * @version (a version number or a date)
- */
 public class Wall extends Actor
 {
-    /**
-     * Act - do whatever the Wall wants to do. This method is called whenever
-     * the 'Act' or 'Run' button gets pressed in the environment.
-     */
-    public void act()
+    public Wall()
     {
-        // Add your action code here.
+        GreenfootImage image = new GreenfootImage(PacManWorld.TILE_SIZE, PacManWorld.TILE_SIZE);
+        image.setColor(new Color(20, 40, 180));
+        image.fillRect(0, 0, PacManWorld.TILE_SIZE, PacManWorld.TILE_SIZE);
+        image.setColor(new Color(80, 120, 255));
+        image.drawRect(1, 1, PacManWorld.TILE_SIZE - 3, PacManWorld.TILE_SIZE - 3);
+        setImage(image);
     }
 }
