@@ -10,6 +10,7 @@ public class GridMover extends Actor
     private int targetX;
     private int targetY;
     private int speed;
+    private boolean usesTunnel;
 
     public GridMover(int startColumn, int startRow, int speed)
     {
@@ -36,6 +37,7 @@ public class GridMover extends Actor
         PacManWorld world = (PacManWorld)getWorld();
         column = newColumn;
         row = newRow;
+        usesTunnel = false;
         targetX = world.getTileCenterX(column);
         targetY = world.getTileCenterY(row);
         setLocation(targetX, targetY);
@@ -56,8 +58,12 @@ public class GridMover extends Actor
         PacManWorld world = (PacManWorld)getWorld();
         directionX = nextDirectionX;
         directionY = nextDirectionY;
+
+        int oldColumn = column;
         column = world.wrapColumn(column + directionX);
         row = row + directionY;
+
+        usesTunnel = directionY == 0 && Math.abs(column - oldColumn) > 1;
         targetX = world.getTileCenterX(column);
         targetY = world.getTileCenterY(row);
     }
@@ -68,9 +74,38 @@ public class GridMover extends Actor
             return;
         }
 
+        if (usesTunnel) {
+            moveThroughTunnel();
+            return;
+        }
+
         int nextX = moveValueToward(getX(), targetX);
         int nextY = moveValueToward(getY(), targetY);
         setLocation(nextX, nextY);
+    }
+
+    private void moveThroughTunnel()
+    {
+        PacManWorld world = (PacManWorld)getWorld();
+        int nextX = getX() + directionX * speed;
+
+        if (nextX < -PacManWorld.TILE_SIZE / 2) {
+            nextX = world.getWidth() + PacManWorld.TILE_SIZE / 2;
+        }
+        else if (nextX > world.getWidth() + PacManWorld.TILE_SIZE / 2) {
+            nextX = -PacManWorld.TILE_SIZE / 2;
+        }
+
+        if (directionX > 0 && nextX >= targetX && nextX < world.getWidth()) {
+            nextX = targetX;
+            usesTunnel = false;
+        }
+        else if (directionX < 0 && nextX <= targetX && nextX > 0) {
+            nextX = targetX;
+            usesTunnel = false;
+        }
+
+        setLocation(nextX, targetY);
     }
 
     private int moveValueToward(int value, int target)
