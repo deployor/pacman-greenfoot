@@ -2,6 +2,7 @@ import greenfoot.*;
 
 public class Wall extends Actor
 {
+    // Wand-Kachel im Labyrinth.
     public Wall()
     {
         GreenfootImage image = new GreenfootImage(PacManWorld.TILE_SIZE, PacManWorld.TILE_SIZE);

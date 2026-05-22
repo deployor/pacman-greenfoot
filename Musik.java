@@ -19,6 +19,6 @@ public class Musik extends Actor
     }
     public void act()
     {
-        // Add your action code here.
+        // Nix bisher.
     }
 }

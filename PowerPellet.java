@@ -2,6 +2,7 @@ import greenfoot.*;
 
 public class PowerPellet extends PacDots
 {
+    // Groesserer Punkt mit mehr Wert.
     private static final int POINT_VALUE = 50;
 
     public PowerPellet()
@@ -14,6 +15,7 @@ public class PowerPellet extends PacDots
 
     public int getPointValue()
     {
+        // Power-Pellets geben mehr Punkte.
         return POINT_VALUE;
     }
 }

@@ -2,183 +2,210 @@ import greenfoot.*;
 
 public class Ghost extends GridMover
 {
-    public static final int RED = 0;
-    public static final int PINK = 1;
-    public static final int CYAN = 2;
-    public static final int ORANGE = 3;
+    // Geister bewegen sich auch auf dem Raster, aber langsamer als Pacman.
+    private static final int GESCHWINDIGKEIT = 2;
+    private static final int ROTER_GEIST = 0;
+    private static final int PINKER_GEIST = 1;
+    private static final int BLAUER_GEIST = 2;
+    private static final int ORANGER_GEIST = 3;
 
-    private static final int SPEED = 2;
+    private final int startSpalte;
+    private final int startReihe;
+    private final int geistArt;
+    private final Color koerperFarbe;
 
-    private final int startColumn;
-    private final int startRow;
-    private final int ghostType;
-    private final Color bodyColor;
-
-    public Ghost(int startColumn, int startRow, int ghostType)
+    public Ghost(int startSpalte, int startReihe, int geistArt)
     {
-        super(startColumn, startRow, SPEED);
-        this.startColumn = startColumn;
-        this.startRow = startRow;
-        this.ghostType = ghostType;
-        bodyColor = colorForType(ghostType);
+        super(startSpalte, startReihe, GESCHWINDIGKEIT);
+        this.startSpalte = startSpalte;
+        this.startReihe = startReihe;
+        this.geistArt = geistArt;
+        koerperFarbe = farbeFuerGeist();
         directionX = 1;
         directionY = 0;
-        makeGhostImage();
+        zeichneGeist();
     }
 
     public void act()
     {
-        PacManWorld world = (PacManWorld)getWorld();
-        if (!world.canGhostMove()) {
+        // Geister warten am Anfang und nach einem Treffer kurz.
+        PacManWorld welt = (PacManWorld)getWorld();
+        if (!welt.canGhostMove()) {
             return;
         }
 
         continueMoving();
 
         if (!isMoving()) {
-            chooseNextMove(world);
+            waehleNaechstenWeg(welt);
         }
     }
 
     public void resetToStart()
     {
-        resetGridPosition(startColumn, startRow);
+        // Geist zurueck in sein Startfeld setzen.
+        resetGridPosition(startSpalte, startReihe);
         directionX = 1;
         directionY = 0;
     }
 
-    private void chooseNextMove(PacManWorld world)
+    private void waehleNaechstenWeg(PacManWorld welt)
     {
-        int[] target = getTargetTile(world);
-        int[][] moves = {
+        // Von allen moeglichen Wegen wird der beste zum Ziel genommen.
+        int[] ziel = zielFeldFinden(welt);
+        int besteRichtungX = 0;
+        int besteRichtungY = 0;
+        int besteEntfernung = Integer.MAX_VALUE;
+        boolean wegGefunden = false;
+
+        int[][] richtungen = alleRichtungen();
+        for (int i = 0; i < richtungen.length; i++) {
+            int richtungX = richtungen[i][0];
+            int richtungY = richtungen[i][1];
+
+            if (!istGuterWeg(welt, richtungX, richtungY)) {
+                continue;
+            }
+
+            int entfernung = entfernungNachSchritt(welt, richtungX, richtungY, ziel);
+            if (!wegGefunden || entfernung < besteEntfernung) {
+                besteRichtungX = richtungX;
+                besteRichtungY = richtungY;
+                besteEntfernung = entfernung;
+                wegGefunden = true;
+            }
+        }
+
+        if (wegGefunden) {
+            startMoving(besteRichtungX, besteRichtungY);
+        }
+    }
+
+    private int[][] alleRichtungen()
+    {
+        return new int[][] {
             {1, 0},
             {-1, 0},
             {0, -1},
             {0, 1}
         };
-
-        int bestX = 0;
-        int bestY = 0;
-        int bestDistance = Integer.MAX_VALUE;
-        boolean foundMove = false;
-
-        for (int i = 0; i < moves.length; i++) {
-            int moveX = moves[i][0];
-            int moveY = moves[i][1];
-
-            if (!canStartMoving(moveX, moveY)) {
-                continue;
-            }
-            if (isReverseMove(moveX, moveY) && hasOtherMove(world)) {
-                continue;
-            }
-
-            int nextColumn = world.wrapColumn(column + moveX);
-            int nextRow = row + moveY;
-            int distance = distanceSquared(nextColumn, nextRow, target[0], target[1]);
-
-            if (!foundMove || distance < bestDistance) {
-                bestX = moveX;
-                bestY = moveY;
-                bestDistance = distance;
-                foundMove = true;
-            }
-        }
-
-        if (foundMove) {
-            startMoving(bestX, bestY);
-        }
     }
 
-    private boolean hasOtherMove(PacManWorld world)
+    private boolean istGuterWeg(PacManWorld welt, int richtungX, int richtungY)
     {
-        int otherMoves = 0;
-
-        if (world.isOpenTile(column + 1, row) && !(directionX == -1 && directionY == 0)) {
-            otherMoves++;
-        }
-        if (world.isOpenTile(column - 1, row) && !(directionX == 1 && directionY == 0)) {
-            otherMoves++;
-        }
-        if (world.isOpenTile(column, row - 1) && !(directionX == 0 && directionY == 1)) {
-            otherMoves++;
-        }
-        if (world.isOpenTile(column, row + 1) && !(directionX == 0 && directionY == -1)) {
-            otherMoves++;
+        if (!canStartMoving(richtungX, richtungY)) {
+            return false;
         }
 
-        return otherMoves > 0;
+        if (istRueckweg(richtungX, richtungY) && hatWegOhneUmdrehen(welt)) {
+            return false;
+        }
+
+        return true;
     }
 
-    private boolean isReverseMove(int moveX, int moveY)
+    private boolean hatWegOhneUmdrehen(PacManWorld welt)
     {
-        return moveX == -directionX && moveY == -directionY;
+        // Wenn es einen anderen Weg gibt, soll der Geist nicht direkt umdrehen.
+        int[][] richtungen = alleRichtungen();
+
+        for (int i = 0; i < richtungen.length; i++) {
+            int richtungX = richtungen[i][0];
+            int richtungY = richtungen[i][1];
+
+            if (!istRueckweg(richtungX, richtungY) && canStartMoving(richtungX, richtungY)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    private int[] getTargetTile(PacManWorld world)
+    private boolean istRueckweg(int richtungX, int richtungY)
     {
-        Pacman pacman = world.getPacman();
-        int pacmanColumn = pacman.column;
-        int pacmanRow = pacman.row;
+        return richtungX == -directionX && richtungY == -directionY;
+    }
 
-        if (ghostType == RED) {
-            return new int[] {pacmanColumn, pacmanRow};
+    private int entfernungNachSchritt(PacManWorld welt, int richtungX, int richtungY, int[] ziel)
+    {
+        int naechsteSpalte = welt.wrapColumn(column + richtungX);
+        int naechsteReihe = row + richtungY;
+        return entfernungQuadrat(naechsteSpalte, naechsteReihe, ziel[0], ziel[1]);
+    }
+
+    private int[] zielFeldFinden(PacManWorld welt)
+    {
+        // Jeder Geist jagt Pacman anders.
+        Pacman pacman = welt.getPacman();
+        int pacmanSpalte = pacman.column;
+        int pacmanReihe = pacman.row;
+
+        if (geistArt == ROTER_GEIST) {
+            return new int[] {pacmanSpalte, pacmanReihe};
         }
-        if (ghostType == PINK) {
+        if (geistArt == PINKER_GEIST) {
             return new int[] {
-                pacmanColumn + pacman.getDirectionX() * 4,
-                pacmanRow + pacman.getDirectionY() * 4
+                pacmanSpalte + pacman.getDirectionX() * 4,
+                pacmanReihe + pacman.getDirectionY() * 4
             };
         }
-        if (ghostType == CYAN) {
+        if (geistArt == BLAUER_GEIST) {
             return new int[] {
-                pacmanColumn + pacman.getDirectionX() * 2,
-                pacmanRow + pacman.getDirectionY() * 2
+                pacmanSpalte + pacman.getDirectionX() * 2,
+                pacmanReihe + pacman.getDirectionY() * 2
             };
         }
 
-        int distanceFromPacman = distanceSquared(column, row, pacmanColumn, pacmanRow);
-        if (distanceFromPacman < 36) {
-            return new int[] {1, world.getMazeRows() - 2};
+        return zielFuerOrangenGeist(welt, pacmanSpalte, pacmanReihe);
+    }
+
+    private int[] zielFuerOrangenGeist(PacManWorld welt, int pacmanSpalte, int pacmanReihe)
+    {
+        int entfernungZuPacman = entfernungQuadrat(column, row, pacmanSpalte, pacmanReihe);
+        if (entfernungZuPacman < 36) {
+            return new int[] {1, welt.getMazeRows() - 2};
         }
 
-        return new int[] {pacmanColumn, pacmanRow};
+        return new int[] {pacmanSpalte, pacmanReihe};
     }
 
-    private int distanceSquared(int columnA, int rowA, int columnB, int rowB)
+    private int entfernungQuadrat(int spalteA, int reiheA, int spalteB, int reiheB)
     {
-        int columnDistance = columnA - columnB;
-        int rowDistance = rowA - rowB;
-        return columnDistance * columnDistance + rowDistance * rowDistance;
+        // Rechnung, um zu sehen, welches Feld naeher am Ziel ist.
+        int spaltenAbstand = spalteA - spalteB;
+        int reihenAbstand = reiheA - reiheB;
+        return spaltenAbstand * spaltenAbstand + reihenAbstand * reihenAbstand;
     }
 
-    private Color colorForType(int type)
+    private Color farbeFuerGeist()
     {
-        if (type == RED) {
+        // Jeder Geister-Typ bekommt seine feste Farbe.
+        if (geistArt == ROTER_GEIST) {
             return Color.RED;
         }
-        if (type == PINK) {
+        if (geistArt == PINKER_GEIST) {
             return Color.PINK;
         }
-        if (type == CYAN) {
+        if (geistArt == BLAUER_GEIST) {
             return Color.CYAN;
         }
         return Color.ORANGE;
     }
 
-    private void makeGhostImage()
+    private void zeichneGeist()
     {
-        int size = PacManWorld.TILE_SIZE - 4;
-        GreenfootImage image = new GreenfootImage(size, size);
-        image.setColor(bodyColor);
-        image.fillOval(0, 0, size, size);
-        image.fillRect(0, size / 2, size, size / 2);
-        image.setColor(Color.WHITE);
-        image.fillOval(size / 5, size / 4, size / 5, size / 5);
-        image.fillOval(size * 3 / 5, size / 4, size / 5, size / 5);
-        image.setColor(Color.BLUE);
-        image.fillOval(size / 4, size / 3, size / 10, size / 10);
-        image.fillOval(size * 13 / 20, size / 3, size / 10, size / 10);
-        setImage(image);
+        // Geist-Bild, fest, aus ovalen.
+        int groesse = PacManWorld.TILE_SIZE - 4;
+        GreenfootImage bild = new GreenfootImage(groesse, groesse);
+        bild.setColor(koerperFarbe);
+        bild.fillOval(0, 0, groesse, groesse);
+        bild.fillRect(0, groesse / 2, groesse, groesse / 2);
+        bild.setColor(Color.WHITE);
+        bild.fillOval(groesse / 5, groesse / 4, groesse / 5, groesse / 5);
+        bild.fillOval(groesse * 3 / 5, groesse / 4, groesse / 5, groesse / 5);
+        bild.setColor(Color.BLUE);
+        bild.fillOval(groesse / 4, groesse / 3, groesse / 10, groesse / 10);
+        bild.fillOval(groesse * 13 / 20, groesse / 3, groesse / 10, groesse / 10);
+        setImage(bild);
     }
 }
