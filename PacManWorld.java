@@ -223,6 +223,6 @@ public class PacManWorld extends World
     {
         showText("Punkte: " + score, 80, 25);
         showText("Leben: " + lives, 200, 25);
-        showText("Punkte uebrig: " + pelletsLeft, 360, 25);
+        showText("Punkte verbleibend: " + pelletsLeft, 360, 25);
     }
 }
