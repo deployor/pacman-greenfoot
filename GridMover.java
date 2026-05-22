@@ -11,6 +11,7 @@ public class GridMover extends Actor
     private int targetY;
     private int speed;
     private boolean usesTunnel;
+    private boolean alreadyTeleported;
 
     public GridMover(int startColumn, int startRow, int speed)
     {
@@ -38,6 +39,7 @@ public class GridMover extends Actor
         column = newColumn;
         row = newRow;
         usesTunnel = false;
+        alreadyTeleported = false;
         targetX = world.getTileCenterX(column);
         targetY = world.getTileCenterY(row);
         setLocation(targetX, targetY);
@@ -64,6 +66,7 @@ public class GridMover extends Actor
         row = row + directionY;
 
         usesTunnel = directionY == 0 && Math.abs(column - oldColumn) > 1;
+        alreadyTeleported = false;
         targetX = world.getTileCenterX(column);
         targetY = world.getTileCenterY(row);
     }
@@ -88,21 +91,27 @@ public class GridMover extends Actor
     {
         PacManWorld world = (PacManWorld)getWorld();
         int nextX = getX() + directionX * speed;
+        int outsideLeft = -PacManWorld.TILE_SIZE / 2;
+        int outsideRight = world.getWidth() + PacManWorld.TILE_SIZE / 2;
 
-        if (nextX < -PacManWorld.TILE_SIZE / 2) {
-            nextX = world.getWidth() + PacManWorld.TILE_SIZE / 2;
+        if (!alreadyTeleported && directionX < 0 && nextX <= outsideLeft) {
+            nextX = outsideRight;
+            alreadyTeleported = true;
         }
-        else if (nextX > world.getWidth() + PacManWorld.TILE_SIZE / 2) {
-            nextX = -PacManWorld.TILE_SIZE / 2;
+        else if (!alreadyTeleported && directionX > 0 && nextX >= outsideRight) {
+            nextX = outsideLeft;
+            alreadyTeleported = true;
         }
 
-        if (directionX > 0 && nextX >= targetX && nextX < world.getWidth()) {
+        if (alreadyTeleported && directionX < 0 && nextX <= targetX) {
             nextX = targetX;
             usesTunnel = false;
+            alreadyTeleported = false;
         }
-        else if (directionX < 0 && nextX <= targetX && nextX > 0) {
+        else if (alreadyTeleported && directionX > 0 && nextX >= targetX) {
             nextX = targetX;
             usesTunnel = false;
+            alreadyTeleported = false;
         }
 
         setLocation(nextX, targetY);
