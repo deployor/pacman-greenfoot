@@ -1,6 +1,0 @@
-#BlueJ class context
-comment0.target=screenHight
-comment0.text=\n\ Write\ a\ description\ of\ class\ screenHight\ here.\n\ \n\ @author\ (your\ name)\ \n\ @version\ (a\ version\ number\ or\ a\ date)\n
-comment1.params=w
-comment1.target=void\ addedToWorld(greenfoot.World)
-numComments=2
