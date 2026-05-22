@@ -2,64 +2,80 @@ import greenfoot.*;
 
 public class Pacman extends GridMover
 {
-    // Pacman merkt sich eine Wunschrichtung und laeuft bis zur naechsten Wand.
+    // Spieler steuert Pacman.
     private static final int GESCHWINDIGKEIT = 4;
+    private static final int BILD_WARTEZEIT = 4;
+
+    private static final String[] BILDER_RECHTS = {"pacman-right-1.png", "pacman-right-2.png", "pacman-right-3.png", "pacman-right-2.png"};
+    private static final String[] BILDER_LINKS = {"pacman-left-1.png", "pacman-left-2.png", "pacman-left-3.png", "pacman-left-2.png"};
+    private static final String[] BILDER_OBEN = {"pacman-up-1.png", "pacman-up-2.png", "pacman-up-3.png", "pacman-up-2.png"};
+    private static final String[] BILDER_UNTEN = {"pacman-down-1.png", "pacman-down-2.png", "pacman-down-3.png", "pacman-down-2.png"};
 
     private final int startSpalte;
     private final int startReihe;
 
     private int wunschRichtungX;
     private int wunschRichtungY;
+    private int bildNummer;
+    private int bildZaehler;
+    private String[] laufBilder;
 
     public Pacman(int startSpalte, int startReihe)
     {
+        // GridMover.java macht die tile-Bewegung.
         super(startSpalte, startReihe, GESCHWINDIGKEIT);
         this.startSpalte = startSpalte;
         this.startReihe = startReihe;
-        directionX = 1;
-        directionY = 0;
+        richtungX = 1;
+        richtungY = 0;
         wunschRichtungX = 1;
         wunschRichtungY = 0;
-        setPacmanImage("pacman-right.png");
+        laufBilder = BILDER_RECHTS;
+        bildSetzen();
     }
 
     public void act()
     {
-        // Reihenfolge: Eingabe lesen, bewegen, Punkte essen, Geist pruefen.
-        PacManWorld world = (PacManWorld)getWorld();
-        if (!world.isGameRunning()) {
+        PacManWorld welt = (PacManWorld)getWorld();
+        // spielLaeuft steht in PacManWorld.java.
+        if (!welt.spielLaeuft()) {
             return;
         }
 
-        handleMovement();
-        eatDots(world);
-        checkGhostTouch(world);
+        // Erst bewegen, dann Bild, Punkt und Geist pruefen.
+        bewegungMachen();
+        animationMachen();
+        punkteEssen(welt);
+        geistPruefen(welt);
     }
 
     public int getDirectionX()
     {
-        return directionX;
+        return richtungX;
     }
 
     public int getDirectionY()
     {
-        return directionY;
+        return richtungY;
     }
 
     public void resetToStart()
     {
-        // Wird nach einem verlorenen Leben benutzt.
-        resetGridPosition(startSpalte, startReihe);
-        directionX = 1;
-        directionY = 0;
+        // Nach Treffer zum Start. zurueckAufTile steht in GridMover.java.
+        zurueckAufTile(startSpalte, startReihe);
+        richtungX = 1;
+        richtungY = 0;
         wunschRichtungX = 1;
         wunschRichtungY = 0;
-        setPacmanImage("pacman-right.png");
+        laufBilder = BILDER_RECHTS;
+        bildNummer = 0;
+        bildZaehler = 0;
+        bildSetzen();
     }
 
     private void readKeys()
     {
-        // Die gedrueckte Taste wird nur als Wunschrichtung gespeichert.
+        // Taste merken.
         if (Greenfoot.isKeyDown("up") || Greenfoot.isKeyDown("w")) {
             wunschRichtungX = 0;
             wunschRichtungY = -1;
@@ -78,66 +94,95 @@ public class Pacman extends GridMover
         }
     }
 
-    private void handleMovement()
+    private void bewegungMachen()
     {
-        // Bewegung ist in einer eigenen Methode, damit act() kurz bleibt.
         readKeys();
-        continueMoving();
+        // weiterlaufen steht in GridMover.java.
+        weiterlaufen();
 
-        if (!isMoving()) {
-            chooseNextMove();
+        if (!bewegtSich()) {
+            naechsteRichtungWaehlen();
         }
     }
 
-    private void chooseNextMove()
+    private void naechsteRichtungWaehlen()
     {
-        // Gewuenschte Richtung hat Vorrang, sonst weiter geradeaus.
-        if (canStartMoving(wunschRichtungX, wunschRichtungY)) {
-            startMoving(wunschRichtungX, wunschRichtungY);
-            updateImageForDirection();
+        // Erst Wunschrichtung probieren, sonst geradeaus weiter.
+        // kannLoslaufen/loslaufen stehen in GridMover.java.
+        if (kannLoslaufen(wunschRichtungX, wunschRichtungY)) {
+            loslaufen(wunschRichtungX, wunschRichtungY);
+            bildDrehen();
         }
-        else if (canStartMoving(directionX, directionY)) {
-            startMoving(directionX, directionY);
-        }
-    }
-
-    private void eatDots(PacManWorld world)
-    {
-        // Wenn Pacman einen Punkt beruehrt, wird er eingesammelt.
-        PacDots dot = (PacDots)getOneIntersectingObject(PacDots.class);
-        if (dot != null) {
-            world.eatPellet(dot);
+        else if (kannLoslaufen(richtungX, richtungY)) {
+            loslaufen(richtungX, richtungY);
         }
     }
 
-    private void checkGhostTouch(PacManWorld world)
+    private void punkteEssen(PacManWorld welt)
     {
-        // Beruehrt Pacman einen aktiven Geist, verliert er ein Leben.
+        // Wenn ein Punkt beruehrt wird, an die World melden.
+        PacDots punkt = (PacDots)getOneIntersectingObject(PacDots.class);
+        if (punkt != null) {
+            // punktEinsammeln steht in PacManWorld.java.
+            welt.punktEinsammeln(punkt);
+        }
+    }
+
+    private void geistPruefen(PacManWorld welt)
+    {
+        // Geist beruehrt? Leben weg.
+        // TODO Powerpill:
+        // Hier muss spaeter unterschieden werden:
+        // Powerpill aktiv -> Ghost fressen und Ghost zum Start schicken.
+        // Powerpill nicht aktiv -> pacmanWurdeGefangen() aufrufen, also Leben weg.
         if (isTouching(Ghost.class)) {
-            world.pacmanWasCaught();
+            // pacmanWurdeGefangen steht in PacManWorld.java.
+            welt.pacmanWurdeGefangen();
         }
     }
 
-    private void updateImageForDirection()
+    private void bildDrehen()
     {
-        // Bild passend zur Laufrichtung setzen.
-        if (directionX < 0) {
-            setPacmanImage("pacman-left.png");
+        // Bildliste passend zur Richtung waehlen.
+        if (richtungX < 0) {
+            laufBilder = BILDER_LINKS;
         }
-        else if (directionX > 0) {
-            setPacmanImage("pacman-right.png");
+        else if (richtungX > 0) {
+            laufBilder = BILDER_RECHTS;
         }
-        else if (directionY < 0) {
-            setPacmanImage("pacman-up.png");
+        else if (richtungY < 0) {
+            laufBilder = BILDER_OBEN;
         }
-        else if (directionY > 0) {
-            setPacmanImage("pacman-down.png");
+        else if (richtungY > 0) {
+            laufBilder = BILDER_UNTEN;
         }
+
+        bildSetzen();
     }
 
-    private void setPacmanImage(String imageName)
+    private void animationMachen()
     {
-        setImage(imageName);
-        getImage().scale(PacManWorld.TILE_SIZE - 6, PacManWorld.TILE_SIZE - 6);
+        // Mund auf/zu beim Laufen.
+        if (!bewegtSich()) {
+            return;
+        }
+
+        bildZaehler++;
+        if (bildZaehler < BILD_WARTEZEIT) {
+            return;
+        }
+
+        bildZaehler = 0;
+        bildNummer++;
+        if (bildNummer >= laufBilder.length) {
+            bildNummer = 0;
+        }
+        bildSetzen();
+    }
+
+    private void bildSetzen()
+    {
+        setImage(laufBilder[bildNummer]);
+        getImage().scale(PacManWorld.TILE_GROESSE - 6, PacManWorld.TILE_GROESSE - 6);
     }
 }

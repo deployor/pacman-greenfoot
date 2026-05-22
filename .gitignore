@@ -8,6 +8,7 @@ target/
 *.war
 *.ear
 storage.csv
+Movethis/
 .DS_Store
 Thumbs.db
 *.swp

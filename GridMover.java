@@ -2,152 +2,148 @@ import greenfoot.*;
 
 public class GridMover extends Actor
 {
-    // Basisklasse fuer alles, was sich auf dem Kachel-Raster bewegt.
-    protected int column;
-    protected int row;
-    protected int directionX;
-    protected int directionY;
+    // Diese Klasse bewegt Pacman und Ghosts tile fuer tile.
+    protected int spalte;
+    protected int reihe;
+    protected int richtungX;
+    protected int richtungY;
 
     private int zielX;
     private int zielY;
     private int geschwindigkeit;
     private boolean tunnelAktiv;
-    private boolean istSchonAufAndereSeite;
 
     public GridMover(int startSpalte, int startReihe, int geschwindigkeit)
     {
-        column = startSpalte;
-        row = startReihe;
+        spalte = startSpalte;
+        reihe = startReihe;
         this.geschwindigkeit = geschwindigkeit;
     }
 
     protected void addedToWorld(World world)
     {
-        // Beim Einfuegen direkt auf richtige kachel setzen.
-        setGridPosition(column, row);
+        // Sprite direkt aufs Start-tile setzen.
+        setzeTilePosition(spalte, reihe);
     }
 
-    public boolean isMoving()
+    public boolean bewegtSich()
     {
-        // Solange das sprite ihr Ziel noch nicht erreicht hat, bewegt sie sich.
+        // Noch nicht am Ziel.
         return getX() != zielX || getY() != zielY;
     }
 
-    public void resetGridPosition(int newColumn, int newRow)
+    public void zurueckAufTile(int neueSpalte, int neueReihe)
     {
-        column = newColumn;
-        row = newRow;
+        spalte = neueSpalte;
+        reihe = neueReihe;
         tunnelAktiv = false;
-        istSchonAufAndereSeite = false;
-        setGridPosition(column, row);
+        setzeTilePosition(spalte, reihe);
     }
 
-    protected boolean canStartMoving(int nextDirectionX, int nextDirectionY)
+    protected boolean kannLoslaufen(int neueRichtungX, int neueRichtungY)
     {
-        // Erst pruefen, ob die naechste Kachel frei ist.
-        PacManWorld world = (PacManWorld)getWorld();
-        return world.isOpenTile(column + nextDirectionX, row + nextDirectionY);
+        // Vor dem Laufen pruefen, ob das naechste tile frei ist.
+        PacManWorld welt = (PacManWorld)getWorld();
+        // istTileFrei steht in PacManWorld.java.
+        return welt.istTileFrei(spalte + neueRichtungX, reihe + neueRichtungY);
     }
 
-    protected void startMoving(int nextDirectionX, int nextDirectionY)
+    protected void loslaufen(int neueRichtungX, int neueRichtungY)
     {
-        // Eine neue Bewegung geht immer genau zur naechsten Kachel.
-        if (!canStartMoving(nextDirectionX, nextDirectionY)) {
+        // Immer nur ein tile weiter laufen.
+        if (!kannLoslaufen(neueRichtungX, neueRichtungY)) {
             return;
         }
 
-        int oldColumn = column;
-        PacManWorld world = (PacManWorld)getWorld();
+        PacManWorld welt = (PacManWorld)getWorld();
 
-        directionX = nextDirectionX;
-        directionY = nextDirectionY;
-        column = world.wrapColumn(column + directionX);
-        row = row + directionY;
+        richtungX = neueRichtungX;
+        richtungY = neueRichtungY;
+        // Tunnel und Einrollen werden in PacManWorld.java entschieden.
+        tunnelAktiv = welt.istTunnelAusgang(spalte + richtungX, reihe + richtungY);
+        spalte = welt.spalteEinrollen(spalte + richtungX);
+        reihe = reihe + richtungY;
 
-        tunnelAktiv = directionY == 0 && Math.abs(column - oldColumn) > 1;
-        istSchonAufAndereSeite = false;
-        zielX = world.getTileCenterX(column);
-        zielY = world.getTileCenterY(row);
+        // Ziel ist die Mitte vom neuen tile.
+        zielX = welt.gibTileMitteX(spalte);
+        zielY = welt.gibTileMitteY(reihe);
     }
 
-    protected void continueMoving()
+    protected void weiterlaufen()
     {
-        // Bewegt die Figur Schritt fuer Schritt zum Ziel.
-        if (!isMoving()) {
+        // Jeden Act etwas weiter bis zum Ziel.
+        if (!bewegtSich()) {
             return;
         }
 
         if (tunnelAktiv) {
-            moveThroughTunnel();
+            durchTunnelLaufen();
         }
         else {
-            moveNormally();
+            normalLaufen();
         }
     }
 
-    private void setGridPosition(int newColumn, int newRow)
+    private void setzeTilePosition(int neueSpalte, int neueReihe)
     {
-        // Setzt die Figur sofort auf eine Kachelmitte.
-        PacManWorld world = (PacManWorld)getWorld();
-        zielX = world.getTileCenterX(newColumn);
-        zielY = world.getTileCenterY(newRow);
+        // Sofort in die Mitte vom tile springen.
+        PacManWorld welt = (PacManWorld)getWorld();
+        zielX = welt.gibTileMitteX(neueSpalte);
+        zielY = welt.gibTileMitteY(neueReihe);
         setLocation(zielX, zielY);
     }
 
-    private void moveNormally()
+    private void normalLaufen()
     {
-        // Normale Bewegung ohne Tunnel.
-        int nextX = moveValueToward(getX(), zielX);
-        int nextY = moveValueToward(getY(), zielY);
-        setLocation(nextX, nextY);
+        // X und Y langsam zum Ziel schieben.
+        int neuesX = zahlZumZielBewegen(getX(), zielX);
+        int neuesY = zahlZumZielBewegen(getY(), zielY);
+        setLocation(neuesX, neuesY);
     }
 
-    private void moveThroughTunnel()
+    private void durchTunnelLaufen()
     {
-        // Erst rauslaufen, dann auf der anderen Seite reinkommen.
-        PacManWorld world = (PacManWorld)getWorld();
-        int nextX = getX() + directionX * geschwindigkeit;
-        int outsideLeft = -PacManWorld.TILE_SIZE / 2;
-        int outsideRight = world.getWidth() + PacManWorld.TILE_SIZE / 2;
+        // Rauslaufen, andere Seite rein.
+        PacManWorld welt = (PacManWorld)getWorld();
+        int neuesX = getX() + richtungX * geschwindigkeit;
+        int linksDraussen = -PacManWorld.TILE_GROESSE / 2;
+        int rechtsDraussen = welt.getWidth() + PacManWorld.TILE_GROESSE / 2;
 
-        if (!istSchonAufAndereSeite && directionX < 0 && nextX <= outsideLeft) {
-            nextX = outsideRight;
-            istSchonAufAndereSeite = true;
+        if (richtungX < 0 && neuesX <= linksDraussen) {
+            neuesX = rechtsDraussen;
         }
-        else if (!istSchonAufAndereSeite && directionX > 0 && nextX >= outsideRight) {
-            nextX = outsideLeft;
-            istSchonAufAndereSeite = true;
+        else if (richtungX > 0 && neuesX >= rechtsDraussen) {
+            neuesX = linksDraussen;
         }
 
-        if (istSchonAufAndereSeite && directionX < 0 && nextX <= zielX) {
-            stopTunnelAt(zielX);
+        if (richtungX < 0 && neuesX <= zielX) {
+            tunnelStoppenBei(zielX);
             return;
         }
-        if (istSchonAufAndereSeite && directionX > 0 && nextX >= zielX) {
-            stopTunnelAt(zielX);
+        if (richtungX > 0 && neuesX >= zielX) {
+            tunnelStoppenBei(zielX);
             return;
         }
 
-        setLocation(nextX, zielY);
+        setLocation(neuesX, zielY);
     }
 
-    private void stopTunnelAt(int x)
+    private void tunnelStoppenBei(int x)
     {
-        // Tunnel ist fertig, Figur sitzt wieder auf einer Kachel.
+        // Wieder genau im tile.
         tunnelAktiv = false;
-        istSchonAufAndereSeite = false;
         setLocation(x, zielY);
     }
 
-    private int moveValueToward(int value, int target)
+    private int zahlZumZielBewegen(int wert, int ziel)
     {
-        // Hilfsmethode: bewegt eine Zahl langsam zum Zielwert.
-        if (value < target) {
-            return Math.min(value + geschwindigkeit, target);
+        // Zahl Richtung Ziel schieben.
+        if (wert < ziel) {
+            return Math.min(wert + geschwindigkeit, ziel);
         }
-        if (value > target) {
-            return Math.max(value - geschwindigkeit, target);
+        if (wert > ziel) {
+            return Math.max(wert - geschwindigkeit, ziel);
         }
-        return value;
+        return wert;
     }
 }

@@ -2,16 +2,16 @@ import greenfoot.*;
 
 public class PacManWorld extends World
 {
-    // Die World ist das Spielfeld und verwaltet Punkte, Leben und das Labyrinth.
+    // Diese Klasse verwaltet das ganze Spiel.
     public static int breite;
     public static int hoehe;
     public static double musik;
     public static int Volume;
 
-    public static final int TILE_SIZE = 32;
-    public static final int TOP_BAR_HEIGHT = 48;
+    public static final int TILE_GROESSE = 32;
+    public static final int OBERE_LEISTE = 48;
 
-    private static final int START_WAIT_TIME = 150;
+    private static final int START_WARTEZEIT = 150;
 
     // # = Wand, . = Punkt, o = grosser Punkt, P = Pacman, G = Geist
     private static final String[] MAZE = {
@@ -36,7 +36,8 @@ public class PacManWorld extends World
         "#####################"
     };
 
-    private static final int MAZE_COLUMNS = MAZE[0].length();
+    private static final int LABYRINTH_SPALTEN = MAZE[0].length();
+    private static final int TUNNEL_REIHE = 9;
 
     private int punkte;
     private int leben;
@@ -49,8 +50,10 @@ public class PacManWorld extends World
 
     public PacManWorld(int breite, int hoehe, double musik, int Volume)
     {
-        super(MAZE_COLUMNS * TILE_SIZE, MAZE.length * TILE_SIZE + TOP_BAR_HEIGHT, 1);
+        // false ist wichtig: sprites duerfen beim Tunnel kurz rauslaufen.
+        super(LABYRINTH_SPALTEN * TILE_GROESSE, MAZE.length * TILE_GROESSE + OBERE_LEISTE, 1, false);
 
+        // Werte speichern, damit andere Klassen sie benutzen koennen.
         PacManWorld.breite = getWidth();
         PacManWorld.hoehe = getHeight();
         PacManWorld.musik = musik;
@@ -60,56 +63,48 @@ public class PacManWorld extends World
         leben = 3;
         punkteUebrig = 0;
         geisterZaehler = 0;
-        warteZeit = START_WAIT_TIME;
+        warteZeit = START_WARTEZEIT;
         spielVorbei = false;
         gewonnen = false;
 
+        setBackground(new GreenfootImage(getWidth(), getHeight()));
+        getBackground().setColor(Color.BLACK);
+        getBackground().fill();
+
+        // Pacman und Ghosts sollen vor Punkten und Waenden sichtbar sein.
         setPaintOrder(settings.class, Pacman.class, Ghost.class, PacDots.class, PowerPellet.class, Wall.class);
-        buildMaze();
+        // Aus der Text-Map werden jetzt echte Objekte gebaut.
+        labyrinthBauen();
         addObject(new settings(), getWidth() - 28, 24);
-        updateScoreBoard();
+        anzeigeAktualisieren();
     }
 
     public void act()
     {
-        // Wird von Greenfoot immer wieder automatisch aufgerufen.
-        updateStartText();
+        // Pro Runde: Starttext, Sieg und Neustart pruefen.
+        startTextAktualisieren();
 
         if (!spielVorbei && !gewonnen && punkteUebrig == 0) {
             gewonnen = true;
             showText("Gewonnen! Druecke R", getWidth() / 2, 25);
         }
 
+        // Nach win/lose startet R das Spiel neu.
         if ((spielVorbei || gewonnen) && Greenfoot.isKeyDown("r")) {
             Greenfoot.setWorld(new PacManWorld(getWidth(), getHeight(), musik, Volume));
         }
     }
 
-    public boolean isGameRunning()
-    {
-        // Pacman und Geister bewegen sich nur, solange das Spiel laeuft.
-        return !spielVorbei && !gewonnen;
-    }
-
     public boolean spielLaeuft()
     {
-        return isGameRunning();
-    }
-
-    public boolean canGhostMove()
-    {
-        // Am Anfang sollen die Geister kurz warten.
-        return isGameRunning() && warteZeit == 0;
+        // Bei win/lose stoppt alles.
+        return !spielVorbei && !gewonnen;
     }
 
     public boolean geisterDuerfenLaufen()
     {
-        return canGhostMove();
-    }
-
-    public Pacman getPacman()
-    {
-        return pacman;
+        // Geister duerfen erst nach der Wartezeit los.
+        return spielLaeuft() && warteZeit == 0;
     }
 
     public Pacman gibPacman()
@@ -117,187 +112,185 @@ public class PacManWorld extends World
         return pacman;
     }
 
-    public int getMazeRows()
-    {
-        return MAZE.length;
-    }
-
     public int gibLabyrinthReihen()
     {
         return MAZE.length;
     }
 
-    public int getTileCenterX(int column)
+    public int gibTileMitteX(int spalte)
     {
-        // Rechnet eine Spalte im Labyrinth in eine X-Position um.
-        return wrapColumn(column) * TILE_SIZE + TILE_SIZE / 2;
+        // Spalte zu x machen. spalteEinrollen ist fuer den Tunnel.
+        return spalteEinrollen(spalte) * TILE_GROESSE + TILE_GROESSE / 2;
     }
 
-    public int gibKachelMitteX(int spalte)
+    public int gibTileMitteY(int reihe)
     {
-        return getTileCenterX(spalte);
+        // Reihe zu y machen.
+        return OBERE_LEISTE + reihe * TILE_GROESSE + TILE_GROESSE / 2;
     }
 
-    public int getTileCenterY(int row)
+    public int spalteEinrollen(int spalte)
     {
-        // Rechnet eine Reihe im Labyrinth in eine Y-Position um.
-        return TOP_BAR_HEIGHT + row * TILE_SIZE + TILE_SIZE / 2;
-    }
-
-    public int gibKachelMitteY(int reihe)
-    {
-        return getTileCenterY(reihe);
-    }
-
-    public int wrapColumn(int column)
-    {
-        // Fuer den Tunnel links/rechts.
-        if (column < 0) {
-            return MAZE_COLUMNS - 1;
+        // Links raus = rechts rein.
+        if (spalte < 0) {
+            return LABYRINTH_SPALTEN - 1;
         }
-        if (column >= MAZE_COLUMNS) {
+        if (spalte >= LABYRINTH_SPALTEN) {
             return 0;
         }
-        return column;
+        return spalte;
     }
 
-    public int spalteUmwickeln(int spalte)
+    public boolean istTunnelAusgang(int spalte, int reihe)
     {
-        return wrapColumn(spalte);
+        // Nur hier geht der Tunnel raus.
+        return reihe == TUNNEL_REIHE && (spalte < 0 || spalte >= LABYRINTH_SPALTEN);
     }
 
-    public boolean isOpenTile(int column, int row)
+    public boolean istTileFrei(int spalte, int reihe)
     {
-        // Nur Waende blockieren den Weg.
-        if (row < 0 || row >= MAZE.length) {
+        // Nur # ist Wand.
+        if (reihe < 0 || reihe >= MAZE.length) {
             return false;
         }
 
-        return gibLabyrinthZeichen(wrapColumn(column), row) != '#';
-    }
+        if (istTunnelAusgang(spalte, reihe)) {
+            return true;
+        }
 
-    public boolean istKachelFrei(int spalte, int reihe)
-    {
-        return isOpenTile(spalte, reihe);
-    }
+        if (spalte < 0 || spalte >= LABYRINTH_SPALTEN) {
+            return false;
+        }
 
-    public void eatPellet(PacDots pellet)
-    {
-        // Punkt entfernen und Score erhoehen.
-        removeObject(pellet);
-        punkte += pellet.getPointValue();
-        punkteUebrig--;
-        updateScoreBoard();
+        // Zeichen aus der Text-Map holen und Wand pruefen.
+        return gibLabyrinthZeichen(spalte, reihe) != '#';
     }
 
     public void punktEinsammeln(PacDots punkt)
     {
-        eatPellet(punkt);
+        // Punkt weg und Score hoch.
+        // TODO Powerpill:
+        // 1. In PacManWorld.java oben eine Zahl machen: private int powerZeit;
+        // 2. Hier grob schreiben: if (punkt instanceof PowerPellet) powerZeit = 400;
+        // 3. In PacManWorld.act() jede Runde powerZeit runterzaehlen, wenn sie > 0 ist.
+        // 4. In PacManWorld.java eine Methode machen: public boolean powerAktiv() { return powerZeit > 0; }
+        // 5. In Ghost.java powerAktiv() fragen: wenn true, ghost-blue.png benutzen und weglaufen.
+        // 6. In Pacman.java bei Geist-Kontakt powerAktiv() fragen: true = Ghost fressen, false = Leben weg.
+        removeObject(punkt);
+        // getPointValue steht in PacDots.java und PowerPellet.java.
+        punkte += punkt.getPointValue();
+        punkteUebrig--;
+        anzeigeAktualisieren();
     }
 
-    public void pacmanWasCaught()
+    public void pacmanWurdeGefangen()
     {
-        // Wenn Pacman einen Geist beruehrt, verliert er ein Leben.
-        if (!canGhostMove()) {
+        // Geist beruehrt = Leben weg.
+        if (!geisterDuerfenLaufen()) {
             return;
         }
 
         leben--;
-        updateScoreBoard();
+        anzeigeAktualisieren();
 
         if (leben <= 0) {
             spielVorbei = true;
+            // TODO Game Over Screen:
+            // Hier spaeter zu GameOverWorld wechseln, statt nur Text zu zeigen.
             showText("Verloren! Druecke R", getWidth() / 2, 25);
             removeObject(pacman);
             return;
         }
 
-        resetActors();
-        warteZeit = START_WAIT_TIME / 2;
+        // Bei uebrigem Leben starten alle wieder neu.
+        figurenZuruecksetzen();
+        warteZeit = START_WARTEZEIT / 2;
     }
 
-    public void pacmanWurdeGefangen()
+    private void startTextAktualisieren()
     {
-        pacmanWasCaught();
-    }
-
-    private void updateStartText()
-    {
-        // Zeigt den Countdown an, bevor die Geister loslaufen.
+        // Text oben beim Start.
         if (spielVorbei || gewonnen) {
             return;
         }
 
         if (warteZeit > 0) {
             warteZeit--;
-            int seconds = warteZeit / 50 + 1;
-            showText("Geister warten: " + seconds, getWidth() / 2, 25);
+            int sekunden = warteZeit / 50 + 1;
+            showText("Geister warten: " + sekunden, getWidth() / 2, 25);
         }
         else {
             showText("", getWidth() / 2, 25);
         }
     }
 
-    private void buildMaze()
+    private void labyrinthBauen()
     {
-        // Baut die Welt aus dem Text-Labyrinth oben.
-        for (int row = 0; row < MAZE.length; row++) {
-            for (int column = 0; column < MAZE_COLUMNS; column++) {
-                addTile(gibLabyrinthZeichen(column, row), column, row);
+        // Map aus Text bauen.
+        for (int reihe = 0; reihe < MAZE.length; reihe++) {
+            for (int spalte = 0; spalte < LABYRINTH_SPALTEN; spalte++) {
+                // Zeichen lesen und passendes Objekt bauen.
+                objektAusZeichenBauen(gibLabyrinthZeichen(spalte, reihe), spalte, reihe);
             }
         }
     }
 
     private char gibLabyrinthZeichen(int spalte, int reihe)
     {
-        // Kuerzere Tunnel-Zeilen werden wie leerer Weg behandelt.
+        // Fehlendes Zeichen = leerer Weg.
         if (spalte < 0 || spalte >= MAZE[reihe].length()) {
             return ' ';
         }
         return MAZE[reihe].charAt(spalte);
     }
 
-    private void addTile(char tile, int column, int row)
+    private void objektAusZeichenBauen(char zeichen, int spalte, int reihe)
     {
-        // Erstellt das passende Objekt fuer ein Zeichen im Labyrinth.
-        int x = getTileCenterX(column);
-        int y = getTileCenterY(row);
+        // Zeichen wird Objekt an der passenden tile-Position.
+        int x = gibTileMitteX(spalte);
+        int y = gibTileMitteY(reihe);
 
-        if (tile == '#') {
+        if (zeichen == '#') {
+            // Wall steht in Wall.java.
             addObject(new Wall(), x, y);
         }
-        else if (tile == '.') {
+        else if (zeichen == '.') {
+            // PacDots steht in PacDots.java.
             addObject(new PacDots(), x, y);
             punkteUebrig++;
         }
-        else if (tile == 'o') {
+        else if (zeichen == 'o') {
+            // PowerPellet steht in PowerPellet.java.
             addObject(new PowerPellet(), x, y);
             punkteUebrig++;
         }
-        else if (tile == 'P') {
-            pacman = new Pacman(column, row);
+        else if (zeichen == 'P') {
+            // Pacman steht in Pacman.java.
+            pacman = new Pacman(spalte, reihe);
             addObject(pacman, x, y);
         }
-        else if (tile == 'G') {
-            addObject(new Ghost(column, row, geisterZaehler), x, y);
+        else if (zeichen == 'G') {
+            // Ghost steht in Ghost.java.
+            addObject(new Ghost(spalte, reihe, geisterZaehler), x, y);
             geisterZaehler++;
         }
     }
 
-    private void resetActors()
+    private void figurenZuruecksetzen()
     {
-        // Nach einem Treffer starten Pacman und Geister wieder neu.
+        // Pacman und alle Ghosts wieder zum Start.
         pacman.resetToStart();
 
         for (Object object : getObjects(Ghost.class)) {
             Ghost ghost = (Ghost)object;
+            // resetToStart steht in Ghost.java.
             ghost.resetToStart();
         }
     }
 
-    private void updateScoreBoard()
+    private void anzeigeAktualisieren()
     {
-        // Text oben im Spielfeld.
+        // Text oben.
         showText("Punkte: " + punkte, 80, 25);
         showText("Leben: " + leben, 200, 25);
         showText("Punkte verbleibend: " + punkteUebrig, 360, 25);

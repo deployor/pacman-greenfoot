@@ -2,7 +2,7 @@ import greenfoot.*;
 
 public class PacDots extends Actor
 {
-    // Kleiner Punkt, den Pacman einsammeln kann.
+    // Kleiner Punkt im Labyrinth.
     private static final int POINT_VALUE = 10;
 
     public PacDots()
@@ -15,7 +15,7 @@ public class PacDots extends Actor
 
     public int getPointValue()
     {
-        // Normale Punkte geben 10 Punkte.
+        // PacManWorld.punktEinsammeln ruft diese Methode auf.
         return POINT_VALUE;
     }
 }
