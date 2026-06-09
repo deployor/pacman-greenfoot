@@ -27,7 +27,17 @@ public class Ghost extends GridMover
 
     public void act()
     {
+
         PacManWorld welt = (PacManWorld)getWorld();
+
+        if (welt.powerAktiv() == true)
+        {
+            setImage("ghost-blue.png");
+        }
+        else
+        {
+            setImage(bildNameFuerGeist());
+        }
         // World entscheidet, ob Ghosts schon laufen duerfen.
         if (!welt.geisterDuerfenLaufen()) {
             return;

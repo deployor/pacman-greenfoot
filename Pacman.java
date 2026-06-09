@@ -130,14 +130,21 @@ public class Pacman extends GridMover
 
     private void geistPruefen(PacManWorld welt)
     {
-        // Geist beruehrt? Leben weg.
-        // TODO Powerpill:
-        // Hier muss spaeter unterschieden werden:
-        // Powerpill aktiv -> Ghost fressen und Ghost zum Start schicken.
-        // Powerpill nicht aktiv -> pacmanWurdeGefangen() aufrufen, also Leben weg.
-        if (isTouching(Ghost.class)) {
-            // pacmanWurdeGefangen steht in PacManWorld.java.
-            welt.pacmanWurdeGefangen();
+        if(!welt.powerAktiv())
+        {
+            // Geist beruehrt? Leben weg.
+            // TODO Powerpill:
+            // Hier muss spaeter unterschieden werden:
+            // Powerpill aktiv -> Ghost fressen und Ghost zum Start schicken.
+            // Powerpill nicht aktiv -> pacmanWurdeGefangen() aufrufen, also Leben weg.
+            if (isTouching(Ghost.class)) {
+                // pacmanWurdeGefangen steht in PacManWorld.java.
+                welt.pacmanWurdeGefangen();
+            }
+        }
+        else
+        {
+            
         }
     }
 

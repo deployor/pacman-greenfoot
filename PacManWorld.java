@@ -15,30 +15,31 @@ public class PacManWorld extends World
 
     // # = Wand, . = Punkt, o = grosser Punkt, P = Pacman, G = Geist
     private static final String[] MAZE = {
-        "#####################",
-        "#.........#.........#",
-        "#.###.###.#.###.###.#",
-        "#o#...............#o#",
-        "#.#.###.#####.###.#.#",
-        "#...#....P....#.....#",
-        "###.#.### ###.###.###",
-        "#.....#  G  #.....#.#",
-        "#.###.# ### #.###.#.#",
-        " .....#G   G#.....  ",
-        "#.###.# ### #.###.#.#",
-        "#.....#  G  #.....#.#",
-        "###.#.#######.###.###",
-        "#...#.........#.....#",
-        "#.#.###.#####.###.#.#",
-        "#o#...............#o#",
-        "#.###.###.#.###.###.#",
-        "#.........#.........#",
-        "#####################"
-    };
+            "#####################",
+            "#.........#.........#",
+            "#.###.###.#.###.###.#",
+            "#o#...............#o#",
+            "#.#.###.#####.###.#.#",
+            "#...#....P....#.....#",
+            "###.#.### ###.###.###",
+            "#.....#  G  #.....#.#",
+            "#.###.# ### #.###.#.#",
+            " .....#G   G#.....  ",
+            "#.###.# ### #.###.#.#",
+            "#.....#  G  #.....#.#",
+            "###.#.#######.###.###",
+            "#...#.........#.....#",
+            "#.#.###.#####.###.#.#",
+            "#o#...............#o#",
+            "#.###.###.#.###.###.#",
+            "#.........#.........#",
+            "#####################"
+        };
 
     private static final int LABYRINTH_SPALTEN = MAZE[0].length();
     private static final int TUNNEL_REIHE = 9;
 
+    private int powerZeit;
     private int punkte;
     private int leben;
     private int punkteUebrig;
@@ -83,6 +84,10 @@ public class PacManWorld extends World
     {
         // Pro Runde: Starttext, Sieg und Neustart pruefen.
         startTextAktualisieren();
+        if(powerZeit > 0)
+        {
+            powerZeit--; 
+        }
 
         if (!spielVorbei && !gewonnen && punkteUebrig == 0) {
             gewonnen = true;
@@ -176,11 +181,20 @@ public class PacManWorld extends World
         // 4. In PacManWorld.java eine Methode machen: public boolean powerAktiv() { return powerZeit > 0; }
         // 5. In Ghost.java powerAktiv() fragen: wenn true, ghost-blue.png benutzen und weglaufen.
         // 6. In Pacman.java bei Geist-Kontakt powerAktiv() fragen: true = Ghost fressen, false = Leben weg.
+        if (punkt instanceof PowerPellet)
+        {
+            powerZeit = 400;
+        }
         removeObject(punkt);
         // getPointValue steht in PacDots.java und PowerPellet.java.
         punkte += punkt.getPointValue();
         punkteUebrig--;
         anzeigeAktualisieren();
+    }
+
+    public boolean powerAktiv() 
+    { 
+        return powerZeit > 0; 
     }
 
     public void pacmanWurdeGefangen()
