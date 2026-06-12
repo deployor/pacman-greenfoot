@@ -220,6 +220,11 @@ public class PacManWorld extends World
         figurenZuruecksetzen();
         warteZeit = START_WARTEZEIT / 2;
     }
+    
+    public void pacmanHatGeistGefangen()
+    {
+        System.out.println("kk");
+    }
 
     private void startTextAktualisieren()
     {

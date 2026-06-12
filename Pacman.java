@@ -140,11 +140,15 @@ public class Pacman extends GridMover
             if (isTouching(Ghost.class)) {
                 // pacmanWurdeGefangen steht in PacManWorld.java.
                 welt.pacmanWurdeGefangen();
+                
             }
         }
         else
         {
-            
+          Ghost g = (Ghost) getOneIntersectingObject(Ghost.class);
+          
+          welt.removeObject(g);
+          
         }
     }
 
