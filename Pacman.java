@@ -141,6 +141,15 @@ public class Pacman extends GridMover
         }
         else
         {
+            Ghost BeruehterGhost = (Ghost)getOneIntersectingObject(Ghost.class);
+            if(BeruehterGhost != null)
+            {
+                BeruehterGhost.resetToStart();
+                welt.pacmanHatGeistGefangen();
+            }
+                
+                
+            
             // TODO Powerpill:
             // Hier soll Pacman den Ghost fressen, wenn Powerpill aktiv ist.
             // Schritt 1: Mit getOneIntersectingObject einen Ghost suchen.

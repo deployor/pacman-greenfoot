@@ -232,7 +232,8 @@ public class PacManWorld extends World
     
     public void pacmanHatGeistGefangen()
     {
-        System.out.println("kk");
+        punkte += 200;
+        anzeigeAktualisieren();
     }
 
     private void startTextAktualisieren()

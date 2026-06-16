@@ -1,4 +1,5 @@
 import greenfoot.*;
+import Mathe.*;
 
 public class Ghost extends GridMover
 {
@@ -33,12 +34,15 @@ public class Ghost extends GridMover
         if (welt.powerAktiv() == true)
         {
             setImage("ghost-blue.png");
+            getImage().scale(PacManWorld.TILE_GROESSE - 4, PacManWorld.TILE_GROESSE - 4);
+            
             // TODO Powerpill:
             // Die Groesse kann man sich unten bei geistBildSetzen anschauen.
         }
         else
         {
             setImage(bildNameFuerGeist());
+            getImage().scale(PacManWorld.TILE_GROESSE - 4, PacManWorld.TILE_GROESSE - 4);
         }
         // World entscheidet, ob Ghosts schon laufen duerfen.
         if (!welt.geisterDuerfenLaufen()) {
@@ -162,6 +166,11 @@ public class Ghost extends GridMover
         Pacman pacman = welt.gibPacman();
         int pacmanSpalte = pacman.spalte;
         int pacmanReihe = pacman.reihe;
+        
+        if (welt.powerAktiv())
+        {
+            return zielWegVonPacman(welt, pacmanSpalte, pacmanReihe);
+        }
 
         // TODO Powerpill:
         // Hier fehlt die Angst-Bewegung.
@@ -202,7 +211,18 @@ public class Ghost extends GridMover
 
         return new int[] {pacmanSpalte, pacmanReihe};
     }
-
+    
+    private int[] zielWegVonPacman(PacManWorld welt, int pacmanSpalte, int pacmanReihe)
+    {
+        int wegVonPacmanSpalte = spalte - pacmanSpalte;
+        int wegVonPacmanReihe = reihe - pacmanReihe;
+        int zielSpalte = spalte + wegVonPacmanSpalte;
+        int zielReihe = reihe + wegVonPacmanReihe;
+        zielSpalte = Mathe.max(1,Mathe.min(19,zielSpalte));
+        
+        return new int[] {pacmanSpalte, pacmanReihe};
+    }
+    
     private int entfernungQuadrat(int spalteA, int reiheA, int spalteB, int reiheB)
     {
         // Kleine Zahl = naeher.
