@@ -141,12 +141,6 @@ public class Pacman extends GridMover
         }
         else
         {
-<<<<<<< Updated upstream
-          Ghost g = (Ghost) getOneIntersectingObject(Ghost.class);
-          
-          welt.removeObject(g);
-          
-=======
             // TODO Powerpill:
             // Hier soll Pacman den Ghost fressen, wenn Powerpill aktiv ist.
             // Schritt 1: Mit getOneIntersectingObject einen Ghost suchen.
@@ -167,7 +161,6 @@ public class Pacman extends GridMover
             // Haeufiger Fehler: pacmanWurdeGefangen() hier aufrufen.
             // Dann verliert Pacman trotz Powerpill ein Leben.
             // Bonus spaeter: Nach resetToStart kann man in PacManWorld.java Punkte geben lassen.
->>>>>>> Stashed changes
         }
     }
 
