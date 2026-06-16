@@ -9,9 +9,11 @@ public class PacManWorld extends World
     public static int Volume;
 
     public static final int TILE_GROESSE = 32;
-    public static final int OBERE_LEISTE = 48;
+    public static final int OBERE_LEISTE = 64;
 
     private static final int START_WARTEZEIT = 150;
+    private static final int TEXT_Y = 18;
+    private static final int STATUS_Y = 46;
 
     // # = Wand, . = Punkt, o = grosser Punkt, P = Pacman, G = Geist
     private static final String[] MAZE = {
@@ -91,7 +93,7 @@ public class PacManWorld extends World
 
         if (!spielVorbei && !gewonnen && punkteUebrig == 0) {
             gewonnen = true;
-            showText("Gewonnen! Druecke R", getWidth() / 2, 25);
+            statusTextSetzen("Gewonnen! Druecke R");
         }
 
         // Nach win/lose startet R das Spiel neu.
@@ -174,13 +176,6 @@ public class PacManWorld extends World
     public void punktEinsammeln(PacDots punkt)
     {
         // Punkt weg und Score hoch.
-        // TODO Powerpill:
-        // 1. In PacManWorld.java oben eine Zahl machen: private int powerZeit;
-        // 2. Hier grob schreiben: if (punkt instanceof PowerPellet) powerZeit = 400;
-        // 3. In PacManWorld.act() jede Runde powerZeit runterzaehlen, wenn sie > 0 ist.
-        // 4. In PacManWorld.java eine Methode machen: public boolean powerAktiv() { return powerZeit > 0; }
-        // 5. In Ghost.java powerAktiv() fragen: wenn true, ghost-blue.png benutzen und weglaufen.
-        // 6. In Pacman.java bei Geist-Kontakt powerAktiv() fragen: true = Ghost fressen, false = Leben weg.
         if (punkt instanceof PowerPellet)
         {
             powerZeit = 400;
@@ -210,8 +205,22 @@ public class PacManWorld extends World
         if (leben <= 0) {
             spielVorbei = true;
             // TODO Game Over Screen:
-            // Hier spaeter zu GameOverWorld wechseln, statt nur Text zu zeigen.
-            showText("Verloren! Druecke R", getWidth() / 2, 25);
+            // Hier ist der richtige Block fuer Game Over.
+            // Bis jetzt wird nur Text gezeigt und Pacman entfernt.
+            // Spaeter: neue World-Klasse machen und hier zur neuen World wechseln.
+            // Greenfoot-Hilfe: Welt wechseln geht mit Greenfoot.setWorld(...).
+            // In die Klammern kommt ein neues World-Objekt, also eine neue Klasse mit new.
+            // Nicht oben in act() machen, weil hier erst klar ist: leben ist 0.
+            // Variablen, die du wahrscheinlich brauchst:
+            // punkte: damit der Game-Over-Screen den Score anzeigen kann
+            // musik und Volume: falls die neue World die gleichen Sound-Werte braucht
+            // Haeufiger Fehler: nur showText benutzen und denken, das ist eine neue Seite.
+            // Besser: eigene World-Klasse bauen und mit Greenfoot.setWorld wechseln.
+            // Haeufiger Fehler: Greenfoot.setWorld ohne new benutzen.
+            // Besser: ein neues World-Objekt erstellen und das in die Klammern geben.
+            // Haeufiger Fehler: den Wechsel vor leben-- machen.
+            // Dann ist noch nicht sicher, ob Pacman wirklich keine Leben mehr hat.
+            statusTextSetzen("Verloren! Druecke R");
             removeObject(pacman);
             return;
         }
@@ -236,10 +245,10 @@ public class PacManWorld extends World
         if (warteZeit > 0) {
             warteZeit--;
             int sekunden = warteZeit / 50 + 1;
-            showText("Geister warten: " + sekunden, getWidth() / 2, 25);
+            statusTextSetzen("Geister warten: " + sekunden);
         }
         else {
-            showText("", getWidth() / 2, 25);
+            statusTextSetzen("");
         }
     }
 
@@ -310,8 +319,14 @@ public class PacManWorld extends World
     private void anzeigeAktualisieren()
     {
         // Text oben.
-        showText("Punkte: " + punkte, 80, 25);
-        showText("Leben: " + leben, 200, 25);
-        showText("Punkte verbleibend: " + punkteUebrig, 360, 25);
+        showText("Punkte: " + punkte, 80, TEXT_Y);
+        showText("Leben: " + leben, getWidth() / 2, TEXT_Y);
+        showText("Uebrig: " + punkteUebrig, getWidth() - 120, TEXT_Y);
+    }
+
+    private void statusTextSetzen(String text)
+    {
+        // Extra Zeile, damit der Text nicht in Punkte/Leben reinlaeuft.
+        showText(text, getWidth() / 2, STATUS_Y);
     }
 }

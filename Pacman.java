@@ -133,10 +133,6 @@ public class Pacman extends GridMover
         if(!welt.powerAktiv())
         {
             // Geist beruehrt? Leben weg.
-            // TODO Powerpill:
-            // Hier muss spaeter unterschieden werden:
-            // Powerpill aktiv -> Ghost fressen und Ghost zum Start schicken.
-            // Powerpill nicht aktiv -> pacmanWurdeGefangen() aufrufen, also Leben weg.
             if (isTouching(Ghost.class)) {
                 // pacmanWurdeGefangen steht in PacManWorld.java.
                 welt.pacmanWurdeGefangen();
@@ -145,10 +141,33 @@ public class Pacman extends GridMover
         }
         else
         {
+<<<<<<< Updated upstream
           Ghost g = (Ghost) getOneIntersectingObject(Ghost.class);
           
           welt.removeObject(g);
           
+=======
+            // TODO Powerpill:
+            // Hier soll Pacman den Ghost fressen, wenn Powerpill aktiv ist.
+            // Schritt 1: Mit getOneIntersectingObject einen Ghost suchen.
+            // Eingabe fuer Greenfoot: Ghost.class.
+            // Schritt 2: Das Ergebnis in einer Ghost-Variable speichern, z.B. beruehrterGeist.
+            // Wichtig: Greenfoot gibt Actor/Object zurueck, deshalb muss daraus ein Ghost gemacht werden.
+            // Schritt 3: Pruefen, ob beruehrterGeist nicht null ist.
+            // null heisst: Pacman beruehrt gerade keinen Ghost.
+            // Schritt 4: Wenn ein Ghost da ist, beruehrterGeist.resetToStart() benutzen.
+            // resetToStart steht in Ghost.java und setzt nur diesen einen Ghost zurueck.
+            // Variablen, die du wahrscheinlich brauchst:
+            // beruehrterGeist: der Ghost, den Greenfoot gefunden hat
+            // welt: die PacManWorld, falls spaeter Punkte dazu kommen sollen
+            // Haeufiger Fehler: isTouching benutzen und dann keinen Ghost zum resetten haben.
+            // Besser: getOneIntersectingObject benutzen, weil man damit das Objekt bekommt.
+            // Haeufiger Fehler: resetToStart auf Pacman aufrufen.
+            // Besser: resetToStart auf dem gefundenen Ghost aufrufen.
+            // Haeufiger Fehler: pacmanWurdeGefangen() hier aufrufen.
+            // Dann verliert Pacman trotz Powerpill ein Leben.
+            // Bonus spaeter: Nach resetToStart kann man in PacManWorld.java Punkte geben lassen.
+>>>>>>> Stashed changes
         }
     }
 

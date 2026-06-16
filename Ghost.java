@@ -33,6 +33,8 @@ public class Ghost extends GridMover
         if (welt.powerAktiv() == true)
         {
             setImage("ghost-blue.png");
+            // TODO Powerpill:
+            // Die Groesse kann man sich unten bei geistBildSetzen anschauen.
         }
         else
         {
@@ -44,9 +46,11 @@ public class Ghost extends GridMover
         }
 
         // TODO Powerpill:
-        // Wenn Pacman eine Powerpill gegessen hat, soll dieser Ghost Angst haben.
-        // Dann soll er ghost-blue.png benutzen und von Pacman weg laufen.
-        // Die Info "Powerpill ist aktiv" sollte aus PacManWorld kommen.
+        // Ghost wird schon blau, aber er jagt Pacman noch weiter.
+        // NICHT hier die Bewegung neu schreiben.
+        // Unten bei zielFeldFinden wird entschieden, wohin der Ghost will.
+        // Greenfoot macht hier nichts automatisch: blaues Bild heisst nicht Angst.
+        // Das Verhalten muss extra ueber das Ziel geaendert werden.
         // weiterlaufen steht in GridMover.java.
         weiterlaufen();
 
@@ -158,6 +162,17 @@ public class Ghost extends GridMover
         Pacman pacman = welt.gibPacman();
         int pacmanSpalte = pacman.spalte;
         int pacmanReihe = pacman.reihe;
+
+        // TODO Powerpill:
+        // Hier fehlt die Angst-Bewegung.
+        // Bevor die normalen Geist-Ziele kommen, erst powerAktiv pruefen.
+        // Wenn Powerpill aktiv ist, soll der Ghost nicht Pacmans Feld als Ziel nehmen.
+        // Such dir dann ein anderes Ziel, z.B. eine Ecke vom Labyrinth.
+        // Wichtig: nur ein Ziel zurueckgeben, laufen macht der Rest der Klasse schon.
+        // Das Ziel ist ein int-Array mit zwei Zahlen: erst Spalte, dann Reihe.
+        // Die Zahlen sind keine Pixel, sondern Felder aus dem Labyrinth.
+        // Pacmans Feld steht schon in pacmanSpalte und pacmanReihe.
+        // Fuer Angst also andere Zahlen nehmen als pacmanSpalte/pacmanReihe.
 
         if (geistArt == ROTER_GEIST) {
             return new int[] {pacmanSpalte, pacmanReihe};
